@@ -3,10 +3,19 @@ import random
 from math import pi, sin, cos
 import matplotlib.pyplot as plt
 
-def find_nearest(array, value):
+def find_nnearest(array, value):
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
     #return array[idx]
+    return idx
+
+def find_nearest(array, value):
+    array = np.asarray(array)
+    idx = None
+    for i in range(len(array)):
+        if value < array[i]:
+            idx = i
+            break
     return idx
 
 # distances to nearest neighbors
@@ -35,29 +44,38 @@ def play_roulette(pos_prob):
     # play roulette with gives weight distribution
     roulette_list = list()
     roulette_counter = list()
+    
     for count, r in enumerate(pos_prob):
-        if r*1 == 0:
+        if r*1 == 0 or r*1 < 1e-20:
             continue
-        elif r*1 > 0 and count == 0:
+        elif r*1 > 0:# and count == 0:
             roulette_list.append(r*1)
             roulette_counter.append(count)
-        elif r*1 > 0:
-            roulette_list.append(r*1+roulette_list[-1])
-            roulette_counter.append(count)
-    
+
+#    print('raw prob\n',pos_prob)       
+#    print('before shit happens\n',roulette_list,'\n')
+    for i in range(1,len(roulette_list)):
+        roulette_list[i] += roulette_list[i-1] 
+        
     roulette = random.uniform(0, 1)
     idx = find_nearest(roulette_list,roulette)
+#    print(roulette_list)
     
     new_pos = roulette_counter[idx]
+#    print('\nReslt section\nRoulette number: {}\ncorr. index: {}'.format(roulette,idx))
     return new_pos
 
 T = 300
 k = 1
 
-N = 5
+N = 100
 beads = np.zeros(shape=(2+N,2))
 beads[1,0] = 1
+scatterPoints = []
 
+# set up scatter plot for displaying beads SAW
+fig = plt.figure()
+ax = fig.add_subplot(111)
 for run in range(N):
     #get random positions in circular resolution of 2*pi/res
     res = 6 # resolution in which angles are taken 2*pi/res
@@ -68,42 +86,39 @@ for run in range(N):
         angles[i] = (init_angle + i*(2*pi/res))%(2*pi)
         pos[i,0] = beads[1+run,0] + cos(angles[i])
         pos[i,1] = beads[1+run,1] + sin(angles[i])
-    
-       # plt.scatter(pos[i,0],pos[i,1])
-        if i < len(beads[:2+run,0]):
-            plt.scatter(beads[i,0],beads[i,1],color='r')
-        #plt.text(pos[i,0],pos[i,1], '{}'.format((str(i)), size=20, zorder=1, color='k'))  
-    
-   
-    #calculated total weight W
+ 
+###=======================================================================###       
+### plots the initial positions for possible new bead positions for debugging ###
+#        plt.scatter(pos[i,0],pos[i,1])
+#        if i < len(beads[:2+run,0]):
+#            plt.scatter(beads[i,0],beads[i,1],color='r')
+#        plt.text(pos[i,0],pos[i,1], '{}'.format((str(i)), size=20, zorder=1, color='k'))  
+###=======================================================================###
+
+    #calculation total weight W and scaling the weights of each position with 
+    # W into vector pos_prob holding the probability of all positions
     w_i_arr = np.zeros(res)
     for i in range(res):
         w_i = get_weight(pos,beads,k,T,i,run)
         w_i_arr[i] = w_i
     W = np.sum(w_i_arr)
-    
     pos_prob = w_i_arr/W
     
+    # function to get the new position according to their prob. distribution
     new_pos = play_roulette(pos_prob)
     
+    # adding the new bead
     beads[2+run,0] = pos[new_pos,0]
     beads[2+run,1] = pos[new_pos,1]
     
-#    # play roulette with gives weight distribution
-#    roulette_list = list()
-#    roulette_counter = list()
-#    for count, r in enumerate(pos_prob):
-#        if r*1 > 0 and count == 0:
-#            roulette_list.append(r*1)
-#            roulette_counter.append(count)
-#        elif r*1 > 0:
-#            roulette_list.append(r*1+roulette_list[-1])
-#            roulette_counter.append(count)
-#    
-#    roulette = random.uniform(0, 1)
-#    idx = find_nearest(roulette_list,roulette)
-#    
-#    new_pos = roulette_counter[idx]
+#    # plotting the beads
+#    scatterPoints.append(ax.scatter(beads[:,0],beads[:,1],color='r'))
+#    plt.plot(beads[:,0],beads[:,1],color='b')
+    
+    plt.scatter(beads[:,0],beads[:,1],color='r')
+#    plt.plot(beads[:,0],beads[:,1],color='b')
 
+    plt.pause(0.05)
 
-#def add_bead(Polymer, PolWeight, L):
+plt.plot(beads[:,0],beads[:,1],color='b')
+       
