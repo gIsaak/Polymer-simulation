@@ -3,11 +3,6 @@ import random
 from math import pi, sin, cos
 import matplotlib.pyplot as plt
 
-def find_nnearest(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    #return array[idx]
-    return idx
 
 def find_nearest(array, value):
     array = np.asarray(array)
@@ -68,7 +63,7 @@ def play_roulette(pos_prob):
 T = 300
 k = 1
 
-N = 100
+N = 50
 beads = np.zeros(shape=(2+N,2))
 beads[1,0] = 1
 scatterPoints = []
@@ -89,7 +84,7 @@ for run in range(N):
  
 ###=======================================================================###       
 ### plots the initial positions for possible new bead positions for debugging ###
-#        plt.scatter(pos[i,0],pos[i,1])
+#        plt.scatter(pos[i,0],pos[i,1],color='g')
 #        if i < len(beads[:2+run,0]):
 #            plt.scatter(beads[i,0],beads[i,1],color='r')
 #        plt.text(pos[i,0],pos[i,1], '{}'.format((str(i)), size=20, zorder=1, color='k'))  
