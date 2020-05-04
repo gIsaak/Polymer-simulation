@@ -1,9 +1,58 @@
 import numpy as np
 import random
-from math import pi, sin, cos
+from math import pi
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 
-def getTrialPos(polymer):
+from matplotlib.ticker import NullFormatter  
+
+def func(x, a, b, c):
+    return a*x**b + c
+
+def fit_func_std(tot_dist, A_std, plot=True):
+    tot_dist = np.trim_zeros(tot_dist, 'b')
+    
+    xdata = np.arange(len(tot_dist))
+    ydata = tot_dist
+    param, pcov = curve_fit(func, xdata, ydata)
+    
+    if plot:
+#        plt.plot(xdata, ydata, 'b-', label='bead distance')
+        plt.errorbar(xdata, ydata**2, yerr=A_std, label='bead distance')
+#        plt.plot(xdata, func(xdata, *param), 'r-', label='fit: a={:5.3f}, b={:5.3f}, c={:5.3f}'.format(param[0],param[1],param[2]))
+        plt.yscale('log')
+        plt.xscale('log')
+        plt.xlabel('Beads')
+        plt.ylabel('$R^2$')
+        plt.legend()
+
+        plt.gca().yaxis.set_minor_formatter(NullFormatter())
+        plt.show()
+    return param
+
+def fit_func(tot_dist, plot=True):
+    tot_dist = np.trim_zeros(tot_dist, 'b')
+    
+    xdata = np.arange(len(tot_dist))
+    ydata = tot_dist
+    param, pcov = curve_fit(func, xdata, ydata)
+    
+    if plot:
+        plt.plot(xdata, ydata, 'b-', label='bead distance')
+        plt.plot(xdata, func(xdata, *param), 'r-', label='fit: a={:5.3f}, b={:5.3f}, c={:5.3f}'.format(param[0],param[1],param[2]))
+#        plt.yscale('log')
+#        plt.xscale('log')
+        plt.legend()
+        plt.show()
+    return param
+
+def get_tot_dist(polymer):
+    # since initial particle is at (0,0)its practically the length of position vector of last bead
+    dist = 0
+    dist = abs(np.sqrt((polymer[-1,0]-polymer[0,0])**2 + (polymer[-1,1]-polymer[0,1])**2))# + 1
+    return dist
+
+def getTrialPos(polymer,res):
     '''
     Gets trial positions for new bead
     Needs res (global variable)
@@ -24,7 +73,7 @@ def getTrialPos(polymer):
     pos[:,1] = y_last + np.sin(angles*2*pi)
     return pos
 
-def getEj(polymer, pos):
+def getEj(polymer, pos, res, eps, sigma):
     '''
     Calculates E for new bead in every trial position
     Needs global variables eps, sigma, res
@@ -41,7 +90,7 @@ def getEj(polymer, pos):
     Ej = np.sum(Ej_mat, axis=0)
     return Ej
 
-def get_weight(polymer, T):
+def get_weight(polymer, T, res, eps, sigma):
     '''
     Calculates weights for all trial positions
     Needs res (global variable)
@@ -52,8 +101,8 @@ def get_weight(polymer, T):
          wj (nparray res): array of trial positions boltzmann weights
          W (float): sum of wj
     '''
-    pos =  getTrialPos(polymer)
-    Ej = getEj(polymer, pos)
+    pos =  getTrialPos(polymer, res)
+    Ej = getEj(polymer, pos, res, eps, sigma)
     wj = np.exp(-Ej/T)
     W = np.sum(wj)
     return pos, wj, W
@@ -74,38 +123,41 @@ def play_roulette(pos, wj, W):
         step += wj[j]
     return pos[j,:]
 
-def genPoly(polymer, N, T):
+def genPoly(polymer, r_dict):
     '''
     Generates polymer of size N at temperature T
     Needs eps, sigma, res global varialbes
 
     In: polymer (input two bead polymer)
-        N (int): polymer size
+        N (int): polymer size minus 2 due to starting beads
         T (float): temperature
     Out: polymer (final polymer of size N)
          polWeight (float): final polymer weight
     '''
+    
+    #######################
+    ### Load Dictionary ###
+    #######################
+    N           = r_dict['number_of_beads']
+    T           = r_dict['temperature']
+    res         = r_dict['resolution']
+    sigma       = r_dict['sigma']
+    eps         = r_dict['epsilon']
+    tot_dist = np.zeros(shape=(N-2))
+    tot_polWeight = np.zeros(shape=(N-2))
+    
     polWeight = 1
-    for i in range(N):
-        pos, wj, W = get_weight(polymer, T)
+    for i in range(N-2):
+        pos, wj, W = get_weight(polymer, T, res, eps, sigma)
         newBead = play_roulette(pos, wj, W)
         polymer = np.vstack((polymer, newBead)) #bead added
         polWeight *= W
-    return polymer, polWeight
+        
+        tot_polWeight[i] = polWeight
+        tot_dist[i] = get_tot_dist(polymer)
+    
+        
+    return polymer, polWeight, tot_dist, tot_polWeight
 
-# MAIN PROGRAM
-# global variables sigma, eps, res
-sigma = 1.0
-eps = 1.0
-res = 100
 
-N = 250
-T = 1.0
 
-polymer = np.array(([0.0, 0.0], [1.0, 0.0]))
-polymer, polWeight = genPoly(polymer, N, T)
-
-fig = plt.figure()
-plot = plt.plot(polymer[:,0],polymer[:,1], '-bo')
-
-plt.show()

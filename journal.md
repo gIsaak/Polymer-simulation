@@ -133,6 +133,14 @@ The described procedure is executed in a loop running over N new beads to add. H
 ## Week 2
 (due before 28 April)
 
+Monday 4 May (Group)
+Isacco vectorized the Rosenbluth algorithm and started to implement the perm algorithm. Ludwig worked on the data acquisition, results and display of Rosenbluth simulations. The vectorization led to a very significant speed up of the simulations. Here we present the squared end-to-end distance of 10000 simulations using a res = 50 and 250 beads for the the self avoiding walk. The average end-to-end distance over all simulations displayed in the plot is not taken with respect to the weights. We do calculate the weights as described in Jos' book but they become extremely large and lead to unjustifyable data. This is a matter we want to discuss with the TA's. However, the mean of the end-to-end distance and the corresponding standard deviation leads to an exponent of: 0.56 The data is presented as figure 10.3 in Jos' book. 
+
+![alt text](img/week2/end-to-end-distance.png "Beads")
+
+The same simulation was performed without the Lennard-Jones potential which led to an exponent of: 0.5
+
+While implementing the perm algorithm we got stuck due to conceptual understanding. We have a bunch of questions prepared for TA's.
 
 ## Week 3
 (due before 5 May)
