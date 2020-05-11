@@ -145,4 +145,32 @@ While implementing the perm algorithm we got stuck due to conceptual understandi
 ## Week 3
 (due before 5 May)
 
+Monday 11 May (Group)
+We have been trying to implement feedback received last week. In fact, our polymers do evetually cross themselves during the self avoiding random walk. This however only occurs for long polymer chain, hence a high number of beads as it was simulated and reported in week 2. To verfiy our SAW we started to simulate 10000 polymers in the range of 20 beads. The result is depicted in the following figure:
+
+![alt text](img/week3/rosenbluth_075.png "few_Beads")
+
+The simulation led to an exponent of: 0.754 as performed for 20 beads. The calculated exponents are fairly consistent up to a length of 25 beads per polymer. To calculate the exponents from the end-to-end distance we did not use the proposed weighted average since the calculation of the total weights W is still not entirely clear to us. This is also the reasin why the error appears to decrease with increased polymer length. This is only an artifact arising from the logarithmic scaling. The error is calculated as the standard deviation of the averaged end-to-end distances using the 10000 simulations. When trying to apply the weighted average we end up with weights W exploding to enormously high numbers. We were trying to debug the code and boiled the problem down to the following crucial points:
+
+The following figure shows the two initial beads and a "chosen" subsequent bead along with all other possible bead positions. Here 6, since we set the resolution to res=6. The number of each position j represents its index j for the lists "Position energy" and "Bead weight w_j"
+
+![alt text](img/week3/weights_question.png "weights_question")
+
+Each position j gets an energy Ej assigned as a reuslt of interaction with all already existing beads. Then the positions weights are calculated by wj = exp(-Ej) where epsilon/kbT = 1. Sigma was set to 0.6 which leads to the negative position energies Ej of j=0,1,2,3,4. Only position j=5 is placed relatively close to already existing beads yielding a positive energy and hence a very low weight, in fact a weight of 0. The weights of the other positions are fairly equal except for j=0, since here attractive Lennard-Jones interaction decreases the energy, thus increases the weight. The total weight of the subsequent bead "Polymer weight W" sums up to approximately 7. For a polymer of length N we would hence expect a total weight of W=7^N. Here we wonder where we are wrong in calculating the weights. Even a random walk (epsilon=0) yields a weight of W=6 since all individual weights are wj=1. The exploding values of the weights are our main problem with the Rosenbluth algorithm.
+
+Since the code produces the correct exponents for random walks of arbitrary polymer length as well as for SAW using short polymers, we are confident about the general implementation. Isacco managed to implement the algorithm recursively which is a corner stone for our implementation of the perm algorithm. However, we did not push new code updates to the master branch since it does not help with our current problem of the weights. Thank you for your help!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
