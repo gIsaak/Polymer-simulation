@@ -4,18 +4,18 @@ from math import pi
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-from matplotlib.ticker import NullFormatter  
+from matplotlib.ticker import NullFormatter
 
 def func(x, a, b, c):
     return a*x**b + c
 
 def fit_func_std(tot_dist, A_std, plot=True):
     tot_dist = np.trim_zeros(tot_dist, 'b')
-    
+
     xdata = np.arange(len(tot_dist))
     ydata = tot_dist
     param, pcov = curve_fit(func, xdata, ydata)
-    
+
     if plot:
 #        plt.plot(xdata, ydata, 'b-', label='bead distance')
         plt.errorbar(xdata, ydata**2, yerr=A_std, label='bead distance')
@@ -32,11 +32,11 @@ def fit_func_std(tot_dist, A_std, plot=True):
 
 def fit_func(tot_dist, plot=True):
     tot_dist = np.trim_zeros(tot_dist, 'b')
-    
+
     xdata = np.arange(len(tot_dist))
     ydata = tot_dist
     param, pcov = curve_fit(func, xdata, ydata)
-    
+
     if plot:
         plt.plot(xdata, ydata, 'b-', label='bead distance')
         plt.plot(xdata, func(xdata, *param), 'r-', label='fit: a={:5.3f}, b={:5.3f}, c={:5.3f}'.format(param[0],param[1],param[2]))
@@ -134,7 +134,7 @@ def genPoly(polymer, r_dict):
     Out: polymer (final polymer of size N)
          polWeight (float): final polymer weight
     '''
-    
+
     #######################
     ### Load Dictionary ###
     #######################
@@ -145,19 +145,34 @@ def genPoly(polymer, r_dict):
     eps         = r_dict['epsilon']
     tot_dist = np.zeros(shape=(N-2))
     tot_polWeight = np.zeros(shape=(N-2))
-    
+
     polWeight = 1
     for i in range(N-2):
         pos, wj, W = get_weight(polymer, T, res, eps, sigma)
         newBead = play_roulette(pos, wj, W)
         polymer = np.vstack((polymer, newBead)) #bead added
         polWeight *= W
-        
+
         tot_polWeight[i] = polWeight
         tot_dist[i] = get_tot_dist(polymer)
-    
-        
+
+
     return polymer, polWeight, tot_dist, tot_polWeight
 
-
-
+def addBead(polymer, polWeight, L):
+    '''
+    Recursive Rosenbluth algorithm to generate polymer in real space
+    Needs eps, sigma, res, T, N global variables
+    In: polymer (nparray 2 x 2): input two bead polymer
+        polWeight (float): initial polymer weight (polWeight = 1)
+        L (int): next bead number (L = 3)
+    Out: polymer (nparray N x 2): final polymer of size N
+         polWeight (float): final polymer weight
+    '''
+    pos, wj, W = get_weight(polymer)
+    newBead = play_roulette(pos, wj, W)
+    polymer = np.vstack((polymer, newBead)) #bead added
+    polWeight *= W
+    if L < N:
+        polymer, polWeight = addBead(polymer, polWeight, L+1)
+    return polymer, polWeight
