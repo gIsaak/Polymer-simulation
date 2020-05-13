@@ -122,6 +122,7 @@ def playRoulette(pos, wj, W):
         step += wj[j]
     return pos[j,:]
 
+<<<<<<< HEAD
 def genPoly(polymer, N):
     '''
     Generates polymer of size N at temperature T
@@ -129,6 +130,14 @@ def genPoly(polymer, N):
 
     In: polymer (nparray res x 2): input two bead polymer
         N (int): final size of polymer
+=======
+def genPoly(polymer):
+    '''
+    Generates polymer of size N at temperature T
+    Needs N, T, eps, sigma, res, T global varialbes
+
+    In: polymer (nparray res x 2): input two bead polymer
+>>>>>>> 683b315942ea1974cb169d3090881987f55c3ff2
     Out: polymer (final polymer of size N)
          pol_weight (float): final polymer weight
     '''
