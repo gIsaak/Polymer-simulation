@@ -52,12 +52,12 @@ def get_tot_dist(polymer):
     dist = abs(np.sqrt((polymer[-1,0]-polymer[0,0])**2 + (polymer[-1,1]-polymer[0,1])**2))# + 1
     return dist
 
-def getTrialPos(polymer,res):
+def getTrialPos(polymer):
     '''
     Gets trial positions for new bead
-    Needs res (global variable)
+    Needs global variable res
 
-    In: polymer
+    In: polymer (nparray L x 2): polymer of (arbitraty) length L
     Out: pos (nparray res x 2): array of trial positions
     '''
     # get position of last bead
@@ -73,48 +73,47 @@ def getTrialPos(polymer,res):
     pos[:,1] = y_last + np.sin(angles*2*pi)
     return pos
 
-def getEj(polymer, pos, res, eps, sigma):
+def getEj(polymer, pos):
     '''
     Calculates E for new bead in every trial position
     Needs global variables eps, sigma, res
 
-    In: polymer
+    In: polymer (nparray L x 2): polymer of (arbitraty) length L
         pos (nparray res x 2): trial positions form getTrialPos
     Out: Ej (nparray res): energy of every pos
     '''
     rotated = np.rot90(pos[:,:,None],1,(0,2))
-    distComp = polymer[:,:,None] - rotated #broadcasting
-    dist = np.sqrt(np.sum(distComp**2, axis=1)) #distances matrix
-    invDist6 = np.reciprocal((dist/sigma)**6)
-    Ej_mat = 4*eps*(invDist6**2 - invDist6)
+    dist_comp = polymer[:,:,None] - rotated #broadcasting
+    dist = np.sqrt(np.sum(dist_comp**2, axis=1)) #distances matrix
+    inv_dist6 = np.reciprocal((dist/sigma)**6)
+    Ej_mat = 4*eps*(inv_dist6**2 - inv_dist6)
     Ej = np.sum(Ej_mat, axis=0)
     return Ej
 
-def get_weight(polymer, T, res, eps, sigma):
+def getWeight(polymer):
     '''
     Calculates weights for all trial positions
-    Needs res (global variable)
+    Needs global variables T, eps, sigma, res
 
-    In: Ej (nparray res): from getEj
-        T (float): temperature
+    In: polymer (nparray L x 2): polymer of (arbitraty) length L
     Out: pos (nparray res x 2): trial positions form getTrialPos
          wj (nparray res): array of trial positions boltzmann weights
          W (float): sum of wj
     '''
-    pos =  getTrialPos(polymer, res)
-    Ej = getEj(polymer, pos, res, eps, sigma)
+    pos =  getTrialPos(polymer)
+    Ej = getEj(polymer, pos)
     wj = np.exp(-Ej/T)
     W = np.sum(wj)
     return pos, wj, W
 
-def play_roulette(pos, wj, W):
+def playRoulette(pos, wj, W):
     '''
     Roulette-wheel algorithm to select new position
 
     In: pos (nparray res x 2): trial positions form getTrialPos
         wj (nparray res): weights of trial positions
         W (float): sum of weights
-    Out: j index of chosen trial position
+    Out: (nparray 1 x 2): coordinates of chosen position
     '''
     j, step = 0, wj[0] #counter
     shot = random.uniform(0, W) #random number extraction
@@ -123,56 +122,38 @@ def play_roulette(pos, wj, W):
         step += wj[j]
     return pos[j,:]
 
-def genPoly(polymer, r_dict):
+def genPoly(polymer):
     '''
     Generates polymer of size N at temperature T
-    Needs eps, sigma, res global varialbes
+    Needs N, T, eps, sigma, res, T global varialbes
 
-    In: polymer (input two bead polymer)
-        N (int): polymer size minus 2 due to starting beads
-        T (float): temperature
+    In: polymer (nparray res x 2): input two bead polymer
     Out: polymer (final polymer of size N)
-         polWeight (float): final polymer weight
+         pol_weight (float): final polymer weight
     '''
-
-    #######################
-    ### Load Dictionary ###
-    #######################
-    N           = r_dict['number_of_beads']
-    T           = r_dict['temperature']
-    res         = r_dict['resolution']
-    sigma       = r_dict['sigma']
-    eps         = r_dict['epsilon']
-    tot_dist = np.zeros(shape=(N-2))
-    tot_polWeight = np.zeros(shape=(N-2))
-
-    polWeight = 1
+    pol_weight = 1
     for i in range(N-2):
-        pos, wj, W = get_weight(polymer, T, res, eps, sigma)
-        newBead = play_roulette(pos, wj, W)
-        polymer = np.vstack((polymer, newBead)) #bead added
-        polWeight *= W
+        pos, wj, W = getWeight(polymer)
+        new_bead = playRoulette(pos, wj, W)
+        polymer = np.vstack((polymer, new_bead)) #bead added
+        pol_weight *= W
+    return polymer, pol_weight
 
-        tot_polWeight[i] = polWeight
-        tot_dist[i] = get_tot_dist(polymer)
-
-
-    return polymer, polWeight, tot_dist, tot_polWeight
-
-def addBead(polymer, polWeight, L):
+# deprecated. I didnt want to delete it because I like it.
+def addBead(polymer, pol_weight, L):
     '''
     Recursive Rosenbluth algorithm to generate polymer in real space
     Needs eps, sigma, res, T, N global variables
     In: polymer (nparray 2 x 2): input two bead polymer
-        polWeight (float): initial polymer weight (polWeight = 1)
+        pol_weight (float): initial polymer weight (pol_weight = 1)
         L (int): next bead number (L = 3)
     Out: polymer (nparray N x 2): final polymer of size N
-         polWeight (float): final polymer weight
+         pol_weight (float): final polymer weight
     '''
-    pos, wj, W = get_weight(polymer)
-    newBead = play_roulette(pos, wj, W)
-    polymer = np.vstack((polymer, newBead)) #bead added
-    polWeight *= W
+    pos, wj, W = getWeight(polymer)
+    new_bead = playRoulette(pos, wj, W)
+    polymer = np.vstack((polymer, new_bead)) #bead added
+    pol_weight *= W
     if L < N:
-        polymer, polWeight = addBead(polymer, polWeight, L+1)
-    return polymer, polWeight
+        polymer, pol_weight = addBead(polymer, pol_weight, L+1)
+    return polymer, pol_weight
