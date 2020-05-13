@@ -122,22 +122,13 @@ def playRoulette(pos, wj, W):
         step += wj[j]
     return pos[j,:]
 
-<<<<<<< HEAD
 def genPoly(polymer, N):
     '''
     Generates polymer of size N at temperature T
     Needs T, eps, sigma, res, T global varialbes
 
-    In: polymer (nparray res x 2): input two bead polymer
+    In: polymer (nparray 2 x 2): input two bead polymer
         N (int): final size of polymer
-=======
-def genPoly(polymer):
-    '''
-    Generates polymer of size N at temperature T
-    Needs N, T, eps, sigma, res, T global varialbes
-
-    In: polymer (nparray res x 2): input two bead polymer
->>>>>>> 683b315942ea1974cb169d3090881987f55c3ff2
     Out: polymer (final polymer of size N)
          pol_weight (float): final polymer weight
     '''
@@ -149,21 +140,109 @@ def genPoly(polymer):
         pol_weight *= W
     return polymer, pol_weight
 
-# deprecated. I didnt want to delete it because I like it.
-def addBead(polymer, pol_weight, L):
+# Hic sunt leones (PERM)
+
+# TODO need to find a smarted implementation for this function
+def getAvWeight(population):
     '''
-    Recursive Rosenbluth algorithm to generate polymer in real space
-    Needs eps, sigma, res, T, N global variables
-    In: polymer (nparray 2 x 2): input two bead polymer
-        pol_weight (float): initial polymer weight (pol_weight = 1)
-        L (int): next bead number (L = 3)
-    Out: polymer (nparray N x 2): final polymer of size N
+    Returns average weight of polymer population
+    In: population (list)
+    Out: (float): avergae weight of population
+    '''
+    av_weight = 0
+    for poly in population:
+        av_weight += poly[1]
+    return av_weight/len(population)
+
+def initializePopulation(initial_pop_size):
+    '''
+    Initializes a population of initial_pop_size number of 3-bead polymers
+    In: initial_pop_size (int): size of population after initialization
+    Out: population (list): grown population of 3-beads polymers
+                            Each element in the list is a list [polymer, pol_weight]
+         av_weight3 (float): average polymer weight of population of 3-bead polymers
+    '''
+    polymer = np.array(([0.0, 0.0], [1.0, 0.0]))
+    population = []
+    for i in range(initial_pop_size):
+        population.append(list(genPoly(polymer, 3)))
+    av_weight3 = getAvWeight(population)
+    return population, av_weight3
+
+def addBead(poly):
+    '''
+    Adds one bead to a polymer and updates its weight
+    Needs eps, sigma, res, T global varialbes
+
+    In: poly (list): Element of population [polymer, pol_weight]
+                     polymer (nparray L+1 x 2) (final polymer of size N)
+                     pol_weight (float): final polymer weight
+        pol_weight (float): final polymer weight
+    Out: polymer (nparray L+1 x 2) (final polymer of size N)
          pol_weight (float): final polymer weight
     '''
+    polymer, pol_weight =  poly[0], poly[1]
     pos, wj, W = getWeight(polymer)
     new_bead = playRoulette(pos, wj, W)
     polymer = np.vstack((polymer, new_bead)) #bead added
     pol_weight *= W
-    if L < N:
-        polymer, pol_weight = addBead(polymer, pol_weight, L+1)
     return polymer, pol_weight
+
+# TODO find way to speedup ugly nested for loos
+def grow(population, step_size, up_th, low_th):
+    '''
+    Adds step_size number of beads to each polymer in the population,
+    calculates up_lim and low_lim and decides whether to prune or split
+    In:  population (list): population polymers
+                            Each element in the list is a list [polymer, pol_weight]
+        step_size (int): number of beads to add before pruning or splitting
+        up_th (float): upper threshold
+        low_th (float): lower threshold
+    '''
+    # add step_size beads
+    for i in range(step_size):
+        for i, poly in enumerate(population):
+            population[i] = list(addBead(poly))
+    # gets up_lim and low_lim
+    av_weight = getAvWeight(population)
+    print('Average weight:', av_weight)
+    for i, poly in enumerate(population):
+        if poly[1] > up_th*av_weight:
+            #split
+            population[i][1] /= 2.0
+            poly[1] /= 2.0
+            population.append(poly)
+        elif poly[1] < low_th*av_weight:
+            # prune
+            # TODO need to check on this
+            population[i][1] *= 2.0
+            rnd = random.uniform(0, 1)
+            if rnd < 0.5:
+                del population[i]
+    return population
+
+# simulation parameters
+eps, T, sigma, res, = 1, 1, 0.8, 6
+# initial size of the population we start with
+initial_pop_size = 10
+
+# need to think how to make this general, sorry im tired
+step_size = 5 # bead added aech time before pruning/enrichment
+num_steps = 20 # number of times we prune/enrich
+# final number of beads
+# N = 3 + step_size*num_steps
+
+# This little simulation shows how the number of polymers changes with the number
+# of beads when growing the population
+pop_size = []
+n = []
+population, _ = initializePopulation(initial_pop_size)
+for i in range(num_steps):
+    population = grow(population, step_size, 2, 0.1)
+    pop_size.append(len(population))
+    n.append(3 + i*step_size)
+
+plt.plot(n, pop_size)
+plt.xlabel('Number of beads')
+plt.ylabel('Population size')
+plt.show()
