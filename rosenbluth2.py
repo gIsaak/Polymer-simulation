@@ -144,8 +144,7 @@ def initializePopulation(initial_pop_size):
     population = []
     for i in range(initial_pop_size):
         population.append(list(genPoly(polymer, 3)))
-    av_weight3 = getAvWeight(population)
-    return population, av_weight3
+    return population
 
 def addBead(poly):
     '''
@@ -183,7 +182,6 @@ def grow(population, step_size, up_th, low_th):
             population[i] = list(addBead(poly))
     # gets up_lim and low_lim
     av_weight = getAvWeight(population)
-    print('Average weight:', av_weight)
     for i, poly in enumerate(population):
         if poly[1] > up_th*av_weight:
             #split
@@ -192,21 +190,66 @@ def grow(population, step_size, up_th, low_th):
             population.append(poly)
         elif poly[1] < low_th*av_weight:
             # prune
-            # TODO need to check on this
             population[i][1] *= 2.0
-            rnd = random.uniform(0, 1)
-            if rnd < 0.5:
+            if random.uniform(0, 1) < 0.5:
                 del population[i]
     return population
+
+def getS2(population):
+    '''
+    Computes the weighted average of the square of end-to-end distance S2 and its error
+    from formed population
+    In:  population (list): grown population of polymers
+                            Each element in the list is a list [polymer, pol_weight]
+    Out: S2 (float): average square of end-to-end distance
+         S2_err (float): error on S2
+    '''
+    S2, S4, S2_err, tot_weight = 0, 0, 0, 0
+    S2_poly, w_poly = 0, 0
+    for poly in population:
+        S2_poly = np.sum(poly[0][-1,:]**2)
+        w_poly = poly[1]
+        S2 += S2_poly * w_poly
+        S4 += (S2_poly**2) * w_poly
+        tot_weight += w_poly
+    S2 = S2/tot_weight
+    S4 = S4/tot_weight
+    S2_err = np.sqrt(S4 - S2**2)
+    return S2, S2_err
+
+def getRg2(population):
+    '''
+    Computes the weighted average of the square of the radius of gyration Rg2
+    and its error from formed population
+    In:  population (list): grown population of polymers
+                            Each element in the list is a list [polymer, pol_weight]
+    Out: Rg2 (float): average square of the radius of gyration Rg2
+         S2_err (float): error on Rg2
+    '''
+    Rg2, Rg4, Rg2_err, tot_weight = 0, 0, 0, 0
+    Rg2_poly, w_poly = 0, 0
+    for poly in population:
+        R_poly = np.sqrt(np.sum(poly[0]**2, axis=1))
+        Rcm = np.average(R_poly)
+        Rg2_poly = np.average((R_poly - Rcm)**2)
+        w_poly = poly[1]
+        Rg2 += Rg2_poly*w_poly
+        Rg4 += (Rg2_poly**2)*w_poly
+        tot_weight += w_poly
+    Rg2 = Rg2/tot_weight
+    Rg4 = Rg4/tot_weight
+    Rg2_err = np.sqrt(Rg4 - Rg2**2)
+    return  Rg2, Rg2_err
+
 
 # simulation parameters
 eps, T, sigma, res, = 1, 1, 0.8, 6
 # initial size of the population we start with
-initial_pop_size = 10
+initial_pop_size = 1000
 
 # need to think how to make this general, sorry im tired
-step_size = 5 # bead added aech time before pruning/enrichment
-num_steps = 20 # number of times we prune/enrich
+step_size = 1 # bead added aech time before pruning/enrichment
+num_steps = 22 # number of times we prune/enrich
 # final number of beads
 # N = 3 + step_size*num_steps
 
@@ -214,9 +257,9 @@ num_steps = 20 # number of times we prune/enrich
 # of beads when growing the population
 pop_size = []
 n = []
-population, _ = initializePopulation(initial_pop_size)
+population = initializePopulation(initial_pop_size)
 for i in range(num_steps):
-    population = grow(population, step_size, 2, 0.1)
+    population = grow(population, step_size, 2.4, 0.3)
     pop_size.append(len(population))
     n.append(3 + i*step_size)
 
@@ -224,3 +267,8 @@ plt.plot(n, pop_size)
 plt.xlabel('Number of beads')
 plt.ylabel('Population size')
 plt.show()
+
+S2, S2_err = getS2(population)
+print('S2 = ', S2, '+- ', S2_err)
+Rg2, Rg2_err = getRg2(population)
+print('Rg2 = ', Rg2, '+- ', Rg2_err)
