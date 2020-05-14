@@ -4,52 +4,30 @@ from math import pi
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-from matplotlib.ticker import NullFormatter
-
 def func(x, a, b, c):
-    return a*x**b + c
+    return a*(x)**b + c
 
-def fit_func_std(tot_dist, A_std, plot=True):
+def fitFunc(tot_dist, A_w_err, plot=True):
     tot_dist = np.trim_zeros(tot_dist, 'b')
 
-    xdata = np.arange(len(tot_dist))
+    xdata = np.arange(len(tot_dist))*5
     ydata = tot_dist
     param, pcov = curve_fit(func, xdata, ydata)
 
     if plot:
 #        plt.plot(xdata, ydata, 'b-', label='bead distance')
-        plt.errorbar(xdata, ydata**2, yerr=A_std, label='bead distance')
+        plt.errorbar(xdata, ydata**2, yerr=A_w_err, label='bead distance err')
 #        plt.plot(xdata, func(xdata, *param), 'r-', label='fit: a={:5.3f}, b={:5.3f}, c={:5.3f}'.format(param[0],param[1],param[2]))
         plt.yscale('log')
         plt.xscale('log')
-        plt.xlabel('Beads')
-        plt.ylabel('$R^2$')
-        plt.legend()
-
-        plt.gca().yaxis.set_minor_formatter(NullFormatter())
-        plt.show()
-    return param
-
-def fit_func(tot_dist, plot=True):
-    tot_dist = np.trim_zeros(tot_dist, 'b')
-
-    xdata = np.arange(len(tot_dist))
-    ydata = tot_dist
-    param, pcov = curve_fit(func, xdata, ydata)
-
-    if plot:
-        plt.plot(xdata, ydata, 'b-', label='bead distance')
-        plt.plot(xdata, func(xdata, *param), 'r-', label='fit: a={:5.3f}, b={:5.3f}, c={:5.3f}'.format(param[0],param[1],param[2]))
-#        plt.yscale('log')
-#        plt.xscale('log')
         plt.legend()
         plt.show()
     return param
 
-def get_tot_dist(polymer):
+def getTotDist(polymer):
     # since initial particle is at (0,0)its practically the length of position vector of last bead
     dist = 0
-    dist = abs(np.sqrt((polymer[-1,0]-polymer[0,0])**2 + (polymer[-1,1]-polymer[0,1])**2))# + 1
+    dist = np.sqrt((polymer[-1,0])**2 + (polymer[-1,1])**2)
     return dist
 
 def getTrialPos(polymer):
