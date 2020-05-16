@@ -1,59 +1,59 @@
 import numpy as np
 import random
 from math import pi
-import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
-import h5py
+#import matplotlib.pyplot as plt
+#from scipy.optimize import curve_fit
+#import h5py
 
-def func(x, a, b, c):
-    return a*(x-1)**b + c
-
-def func075(x, a, c):
-    return a*(x-1)**0.75 + c
-
-def func35(x, b, c):
-    return (x/6)**(b) + c
-
-def fitFunc(tot_dist, A_w_err, start, bb, step, plot=True):
-    tot_dist = np.trim_zeros(tot_dist, 'b')
-
-    xdata = np.asarray(range(start,bb,step))
-    xdata = xdata[:len(tot_dist)]
-    ydata = tot_dist
-    
-    param, pcov = curve_fit(func, xdata, ydata)
-    
-    f_param, f_pcov = curve_fit(func075, xdata, ydata)
-
-    if plot:
-#        plt.plot(xdata, ydata, 'b-', label='bead distance')
-        plt.errorbar(xdata, ydata**2, yerr=A_w_err**2, marker='x', color='g',label='bead distance err')
-        plt.plot(xdata, func075(xdata, *f_param)**2, 'r--',markersize=3,label='$a(N-1)^{0.75}+c$')
-#        plt.plot(xdata, func(xdata, *param), 'r-', label='fit: a={:5.3f}, b={:5.3f}, c={:5.3f}'.format(param[0],param[1],param[2]))
-        plt.yscale('log')
-        plt.xscale('log')
-        plt.legend()
-        plt.show()
-    return param
-
-def fitFuncRg(tot_dist, A_w_err, start, bb, step, plot=True):
-    tot_dist = np.trim_zeros(tot_dist, 'b')
-
-    xdata = np.asarray(range(start,bb,step))
-    ydata = tot_dist
-    
-    f_param, f_pcov = curve_fit(func35, xdata, ydata)
-
-    if plot:
-#        plt.plot(xdata, ydata**2, label='radius of gyration')
-        plt.errorbar(xdata, ydata**2, yerr=A_w_err**2,marker='x',color='g', label='radius of gyration')
-        plt.plot(xdata, func35(xdata, *f_param)**2,'r--',label='$(^N/_6)^{b}+c$')
-#        plt.plot(xdata, func(xdata, *param), 'r-', label='fit: a={:5.3f}, b={:5.3f}, c={:5.3f}'.format(param[0],param[1],param[2]))
-        plt.yscale('log')
-        plt.xscale('log')
-        plt.legend(loc=2, prop={'size': 12})
-        plt.show()
-    return f_param
+#def func(x, a, b, c):
+#    return a*(x-1)**b + c
+#
+#def func075(x, a, c):
+#    return a*(x-1)**0.75 + c
+#
+#def func35(x, b, c):
+#    return (x/6)**(b) + c
+#
+#def fitFunc(tot_dist, A_w_err, start, bb, step, plot=True):
+#    tot_dist = np.trim_zeros(tot_dist, 'b')
+#
+#    xdata = np.asarray(range(start,bb,step))
+#    xdata = xdata[:len(tot_dist)]
+#    ydata = tot_dist
+#    
+#    param, pcov = curve_fit(func, xdata, ydata)
+#    
+#    f_param, f_pcov = curve_fit(func075, xdata, ydata)
+#
+#    if plot:
+##        plt.plot(xdata, ydata, 'b-', label='bead distance')
+#        plt.errorbar(xdata, ydata**2, yerr=A_w_err**2, marker='x', color='g',label='bead distance err')
+#        plt.plot(xdata, func075(xdata, *f_param)**2, 'r--',markersize=3,label='$a(N-1)^{0.75}+c$')
+##        plt.plot(xdata, func(xdata, *param), 'r-', label='fit: a={:5.3f}, b={:5.3f}, c={:5.3f}'.format(param[0],param[1],param[2]))
+#        plt.yscale('log')
+#        plt.xscale('log')
+#        plt.legend()
+#        plt.show()
+#    return param
+#
+#def fitFuncRg(tot_dist, A_w_err, start, bb, step, plot=True):
+#    tot_dist = np.trim_zeros(tot_dist, 'b')
+#
+#    xdata = np.asarray(range(start,bb,step))
+#    ydata = tot_dist
+#    
+#    f_param, f_pcov = curve_fit(func35, xdata, ydata)
+#
+#    if plot:
+##        plt.plot(xdata, ydata**2, label='radius of gyration')
+#        plt.errorbar(xdata, ydata**2, yerr=A_w_err**2,marker='x',color='g', label='radius of gyration')
+#        plt.plot(xdata, func35(xdata, *f_param)**2,'r--',label='$(^N/_6)^{b}+c$')
+##        plt.plot(xdata, func(xdata, *param), 'r-', label='fit: a={:5.3f}, b={:5.3f}, c={:5.3f}'.format(param[0],param[1],param[2]))
+#        plt.yscale('log')
+#        plt.xscale('log')
+#        plt.legend(loc=2, prop={'size': 12})
+#        plt.show()
+#    return f_param
 
 def getTotDist(polymer):
     '''
