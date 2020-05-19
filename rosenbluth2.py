@@ -143,7 +143,6 @@ def getTrialPos(polymer,res):
         res (integer): number of trial position along the arc
     Out: pos (nparray res x 2): array of trial positions
     '''
-    # get position of last bead
     x_last = polymer[-1,0]
     y_last = polymer[-1,1]
     # compute angles (units of 2pi)
@@ -179,7 +178,7 @@ def getWeight(polymer, parameters):
     Calculates weights for all trial positions
 
     In: polymer (nparray L x 2): polymer of (arbitrary) length L
-        T (float): Temperature
+        parameters (touple): Holds simulation parameters
     Out: pos (nparray res x 2): trial positions form getTrialPos
          wj (nparray res): array of trial positions boltzmann weights
          W (float): sum of wj
@@ -200,8 +199,8 @@ def playRoulette(pos, wj, W):
         W (float): sum of weights
     Out: (nparray 1 x 2): coordinates of chosen position
     '''
-    j, step = 0, wj[0] #counter
-    shot = random.uniform(0, W) #random number extraction
+    j, step = 0, wj[0] 
+    shot = random.uniform(0, W)
     while step < shot:
         j += 1
         step += wj[j]
@@ -213,6 +212,7 @@ def genPoly(polymer, N, parameters):
 
     In: polymer (nparray 2 x 2): input two bead polymer
         N (int): final size of polymer
+        parameters (touple): Holds simulation parameters
     Out: polymer (final polymer of size N)
          pol_weight (float): final polymer weight
     '''
@@ -220,13 +220,10 @@ def genPoly(polymer, N, parameters):
     for i in range(N-2):
         pos, wj, W = getWeight(polymer,parameters)
         new_bead = playRoulette(pos, wj, W)
-        polymer = np.vstack((polymer, new_bead)) #bead added
+        polymer = np.vstack((polymer, new_bead))
         pol_weight *= W
     return polymer, pol_weight
 
-# Hic sunt leones (PERM)
-
-# TODO need to find a smarted implementation for this function
 def getAvWeight(population):
     '''
     Returns average weight of polymer population
@@ -242,6 +239,7 @@ def initializePopulation(initial_pop_size,parameters):
     '''
     Initializes a population of initial_pop_size number of 3-bead polymers
     In: initial_pop_size (int): size of population after initialization
+        parameters (touple): Holds simulation parameters
     Out: population (list): grown population of 3-beads polymers
                             Each element in the list is a list [polymer, pol_weight]
          av_weight3 (float): average polymer weight of population of 3-bead polymers
@@ -260,26 +258,27 @@ def addBead(poly,parameters):
                      polymer (nparray L+1 x 2) (final polymer of size N)
                      pol_weight (float): final polymer weight
         pol_weight (float): final polymer weight
+        parameters (touple): Holds simulation parameters
     Out: polymer (nparray L+1 x 2) (final polymer of size N)
          pol_weight (float): final polymer weight
     '''
     polymer, pol_weight =  poly[0], poly[1]
     pos, wj, W = getWeight(polymer,parameters)
     new_bead = playRoulette(pos, wj, W)
-    polymer = np.vstack((polymer, new_bead)) #bead added
+    polymer = np.vstack((polymer, new_bead))
     pol_weight *= W
     return polymer, pol_weight
 
-# TODO find way to speedup ugly nested for loos
 def grow(population, step_size, up_th, low_th, parameters):
     '''
     Adds step_size number of beads to each polymer in the population,
     calculates up_lim and low_lim and decides whether to prune or split
     In:  population (list): population polymers
                             Each element in the list is a list [polymer, pol_weight]
-        step_size (int): number of beads to add before pruning or splitting
-        up_th (float): upper threshold
-        low_th (float): lower threshold
+         step_size (int): number of beads to add before pruning or splitting
+         up_th (float): upper threshold
+         low_th (float): lower threshold
+         parameters (touple): Holds simulation parameters
     '''
     # add step_size beads
     for i in range(step_size):

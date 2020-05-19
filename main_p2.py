@@ -6,7 +6,7 @@ import h5py
 ## simulation parameters
 eps, T, sigma, res, = 1, 1, 0.8, 6
 parameters = (T,eps,sigma,res)
-## range(start,bb,step) defines the polymes length for which simulations are run
+## defines bead length for simulations as range(start,bb,step) 
 bb= 100
 start = 1
 step = 5
@@ -30,9 +30,8 @@ for count, N in enumerate(range(start,bb,step)):
     polymer_list.append(polymer_arr)
     print('Done with {} beads'.format(N))
   
-# Optional saving of data in pickle format  
+# Optional saving and loading of data in pickle format  
 #pickle.dump(polymer_list, open( "Sim_rosenbluth_{}.p".format(str(runs)), "wb" ))   
-# load data and  extract observables
 #polymer_list = pickle.load( open( "Sim_rosenbluth_{}.p".format(str(runs)), "rb" ) )
 
 A_w_RR= np.zeros(len(range(start,bb,step)))
@@ -51,7 +50,7 @@ for count, i in enumerate(polymer_list):
     Rg, Rg_err = r.getRg(i)
     r_gyration_RR[count] = Rg
     r_gyration_err_RR[count] = Rg_err
-##
+
 ################################
 ######## PERM simulation  ######
 ################################
@@ -92,7 +91,7 @@ for count, b in enumerate(range(start,bb,step)):
 
     print('Done with {} beads'.format(b))
     
-## optional saving of data in binary file
+## optional saving of data in h5py format
 #hf = h5py.File('Sim_polymer_PERM.h5', 'w')
 #hf.create_dataset('A_w', data=A_w_PERM)
 #hf.create_dataset('A_w_err', data=A_w_err_PERM)
