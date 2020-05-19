@@ -3,57 +3,126 @@ import random
 from math import pi
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-import h5py
 
 def func(x, a, b, c):
+    '''
+    Defines function for data fitting. (end-to-end distance)
+
+    In: x: x-axis values
+        a,b,c: fit paramters
+    Out: function values
+    '''
     return a*(x-1)**b + c
 
 def func075(x, a, c):
+    '''
+    Defines function for data fitting. (end-to-end distance)
+
+    In: x: x-axis values
+        a,c: fit paramters
+    Out: function values
+    '''
     return a*(x-1)**0.75 + c
 
 def func35(x, b, c):
+    '''
+    Defines function for data fitting. (radius of gyration)
+
+    In: x: x-axis values
+        b,c: fit paramters
+    Out: function values
+    '''
     return (x/6)**(b) + c
 
-def fitFunc(tot_dist, A_w_err, start, bb, step, plot=True):
+def fitFunc(tot_dist, A_w_err,A_w_RR,A_w_err_RR, start, bb, step, dstep, pop_size=None, plot=True):
+    '''
+    Method to plot the end-to-end distance data of Rosenbluth and PERM
+    in a single plot.
+
+    In: tot_dist (array): End-to-end distance values from algorithm 1
+        A_w_err(array): Errors of values from algorithm 1 
+        A_w_RR (array): End-to-end distance values from algorithm 2
+        A_w_err_RR(array): Errors of values from algorithm 2 
+        start,bb,step (integers): Paramerters defining the simulation bead numbers
+        dstep (int): Every dteps'th data point will be plotted
+        pop_size (array): Optional array to plot
+        plot (boolean): Default: True: a plot will be generated
+                        Falso: no plot generated
+    Out: param_A1 (touple): Fitting parameters obtained from algorithm 1
+         param_A2 (touple): Fitting parameters obtained from algorithm 2
+    '''
     tot_dist = np.trim_zeros(tot_dist, 'b')
 
     xdata = np.asarray(range(start,bb,step))
     xdata = xdata[:len(tot_dist)]
     ydata = tot_dist
     
-    param, pcov = curve_fit(func, xdata, ydata)
+    param_A1, pcov = curve_fit(func, xdata, ydata)
+    param_A2, pcov = curve_fit(func, xdata, A_w_RR)
+    f_param, f_pcov = curve_fit(func075, xdata, A_w_RR)
     
-    f_param, f_pcov = curve_fit(func075, xdata, ydata)
-
     if plot:
-#        plt.plot(xdata, ydata, 'b-', label='bead distance')
-        plt.errorbar(xdata, ydata**2, yerr=A_w_err**2, marker='x', color='g',label='bead distance err')
-        plt.plot(xdata, func075(xdata, *f_param)**2, 'r--',markersize=3,label='$a(N-1)^{0.75}+c$')
-#        plt.plot(xdata, func(xdata, *param), 'r-', label='fit: a={:5.3f}, b={:5.3f}, c={:5.3f}'.format(param[0],param[1],param[2]))
+        if pop_size is not None:
+            plt.plot(xdata[::dstep],pop_size[::dstep],marker='o',markersize=2, linewidth=0,color='b',label='population size')
+        plt.plot(xdata[::dstep], A_w_RR[::dstep]**2, marker='x',markersize=7, color='g', linewidth=0,label='PERM')
+        plt.errorbar(xdata[::dstep], A_w_RR[::dstep]**2, yerr=A_w_err_RR[::dstep]**2, fmt='none', color='g', capsize=0)
+        plt.plot(xdata[::dstep], ydata[::dstep]**2, marker='.',markersize=5, color='m', linewidth=0,label='Rosenbluth')
+        plt.errorbar(xdata[::dstep], ydata[::dstep]**2, yerr=A_w_err[::dstep]**2, fmt='none', color='m', capsize=3)
+        plt.plot(xdata, func075(xdata, *f_param)**2, 'r--',linewidth=2,label='$a(N-1)^{0.75}+c$')
+        
+        plt.xlabel('$N$')
+        plt.ylabel('$R_{N}^{2}$')
+        plt.title('End-to-end distance squared')
         plt.yscale('log')
         plt.xscale('log')
         plt.legend()
-        plt.show()
-    return param
+#        plt.savefig('PERM_looooool.png',dpi=500)
+        plt.show()       
+    return param_A1,param_A2
 
-def fitFuncRg(tot_dist, A_w_err, start, bb, step, plot=True):
+def fitFuncRg(tot_dist, r_gyration_err, r_gyration_RR,r_gyration_err_RR, start, bb, step, dstep, plot=True):
+    '''
+    Method to plot the radius of gyration data of Rosenbluth and PERM
+    in a single plot.
+
+    In: tot_dist (array): Radius of gyration values from algorithm 1
+        r_gyration_err(array): Errors of values from algorithm 1 
+        r_gyration_RR (array): Radius of gyration values from algorithm 2
+        r_gyration_err_RR(array): Errors of values from algorithm 2 
+        start,bb,step (integers): Paramerters defining the simulation bead numbers
+        dstep (int): Every dteps'th data point will be plotted
+        plot (boolean): Default: True: a plot will be generated
+                        Falso: no plot generated
+    Out: param_A1 (touple): Fitting parameters obtained from algorithm 1
+         param_A2 (touple): Fitting parameters obtained from algorithm 2
+    '''
     tot_dist = np.trim_zeros(tot_dist, 'b')
 
     xdata = np.asarray(range(start,bb,step))
+    xdata = xdata[:len(tot_dist)]
     ydata = tot_dist
     
-    f_param, f_pcov = curve_fit(func35, xdata, ydata)
+    param_A1, f_pcov = curve_fit(func35, xdata, ydata)
+    param_A2, f_pcov = curve_fit(func35, xdata, r_gyration_RR)
 
     if plot:
-#        plt.plot(xdata, ydata**2, label='radius of gyration')
-        plt.errorbar(xdata, ydata**2, yerr=A_w_err**2,marker='x',color='g', label='radius of gyration')
-        plt.plot(xdata, func35(xdata, *f_param)**2,'r--',label='$(^N/_6)^{b}+c$')
-#        plt.plot(xdata, func(xdata, *param), 'r-', label='fit: a={:5.3f}, b={:5.3f}, c={:5.3f}'.format(param[0],param[1],param[2]))
+        plt.plot(xdata[::dstep], ydata[::dstep]**2, marker='.',markersize=5, color='m', linewidth=0,label='Rosenbluth')
+        plt.errorbar(xdata[::dstep], ydata[::dstep]**2, yerr=r_gyration_err[::dstep]**2,fmt='none', color='m',capsize=5)
+        
+        plt.plot(xdata[::dstep], r_gyration_RR[::dstep]**2, marker='x',markersize=7, color='g', linewidth=0,label='PERM')
+        plt.errorbar(xdata[::dstep], r_gyration_RR[::dstep]**2, yerr=r_gyration_err_RR[::dstep]**2, fmt='none', color='g',capsize=5)
+        
+        plt.plot(xdata, func35(xdata, *param_A2)**2,'r--',linewidth=2,label='$(^N/_6)^{b}+c$')
+
+        plt.xlabel('$N$')
+        plt.ylabel('$R_{g}^{2}$')
+        plt.title('Radius of gyration squared')
         plt.yscale('log')
         plt.xscale('log')
-        plt.legend(loc=2, prop={'size': 12})
+        plt.legend()
+#        plt.savefig('PERM_r_gyration_3.png',dpi=500)
         plt.show()
-    return f_param
+    return param_A1, param_A2
 
 def getTotDist(polymer):
     '''
@@ -66,12 +135,12 @@ def getTotDist(polymer):
     dist = np.sqrt((polymer[-1,0])**2 + (polymer[-1,1])**2)
     return dist
 
-def getTrialPos(polymer):
+def getTrialPos(polymer,res):
     '''
     Gets trial positions for new bead
-    Needs global variable res
 
     In: polymer (nparray L x 2): polymer of (arbitraty) length L
+        res (integer): number of trial position along the arc
     Out: pos (nparray res x 2): array of trial positions
     '''
     # get position of last bead
@@ -87,13 +156,14 @@ def getTrialPos(polymer):
     pos[:,1] = y_last + np.sin(angles*2*pi)
     return pos
 
-def getEj(polymer, pos):
+def getEj(polymer, pos, sigma, eps):
     '''
     Calculates E for new bead in every trial position
-    Needs global variables eps, sigma, res
 
-    In: polymer (nparray L x 2): polymer of (arbitraty) length L
+    In: polymer (nparray L x 2): polymer of (arbitrary) length L
         pos (nparray res x 2): trial positions form getTrialPos
+        sigma (float): defines minimum of interaction potential
+        eps (float): defines energy scale of interaction potential
     Out: Ej (nparray res): energy of every pos
     '''
     rotated = np.rot90(pos[:,:,None],1,(0,2))
@@ -104,18 +174,19 @@ def getEj(polymer, pos):
     Ej = np.sum(Ej_mat, axis=0)
     return Ej
 
-def getWeight(polymer):
+def getWeight(polymer, parameters):
     '''
     Calculates weights for all trial positions
-    Needs global variables T, eps, sigma, res
 
-    In: polymer (nparray L x 2): polymer of (arbitraty) length L
+    In: polymer (nparray L x 2): polymer of (arbitrary) length L
+        T (float): Temperature
     Out: pos (nparray res x 2): trial positions form getTrialPos
          wj (nparray res): array of trial positions boltzmann weights
          W (float): sum of wj
     '''
-    pos =  getTrialPos(polymer)
-    Ej = getEj(polymer, pos)
+    T, eps, sigma, res = parameters
+    pos =  getTrialPos(polymer, res)
+    Ej = getEj(polymer, pos, sigma, eps)
     wj = np.exp(-Ej/T)
     W = np.sum(wj)
     return pos, wj, W
@@ -136,10 +207,9 @@ def playRoulette(pos, wj, W):
         step += wj[j]
     return pos[j,:]
 
-def genPoly(polymer, N):
+def genPoly(polymer, N, parameters):
     '''
     Generates polymer of size N at temperature T
-    Needs T, eps, sigma, res, T global varialbes
 
     In: polymer (nparray 2 x 2): input two bead polymer
         N (int): final size of polymer
@@ -148,7 +218,7 @@ def genPoly(polymer, N):
     '''
     pol_weight = 1
     for i in range(N-2):
-        pos, wj, W = getWeight(polymer)
+        pos, wj, W = getWeight(polymer,parameters)
         new_bead = playRoulette(pos, wj, W)
         polymer = np.vstack((polymer, new_bead)) #bead added
         pol_weight *= W
@@ -168,7 +238,7 @@ def getAvWeight(population):
         av_weight += poly[1]
     return av_weight/len(population)
 
-def initializePopulation(initial_pop_size):
+def initializePopulation(initial_pop_size,parameters):
     '''
     Initializes a population of initial_pop_size number of 3-bead polymers
     In: initial_pop_size (int): size of population after initialization
@@ -179,13 +249,12 @@ def initializePopulation(initial_pop_size):
     polymer = np.array(([0.0, 0.0], [1.0, 0.0]))
     population = []
     for i in range(initial_pop_size):
-        population.append(list(genPoly(polymer, 3)))
+        population.append(list(genPoly(polymer, 3, parameters)))
     return population
 
-def addBead(poly):
+def addBead(poly,parameters):
     '''
     Adds one bead to a polymer and updates its weight
-    Needs eps, sigma, res, T global varialbes
 
     In: poly (list): Element of population [polymer, pol_weight]
                      polymer (nparray L+1 x 2) (final polymer of size N)
@@ -195,14 +264,14 @@ def addBead(poly):
          pol_weight (float): final polymer weight
     '''
     polymer, pol_weight =  poly[0], poly[1]
-    pos, wj, W = getWeight(polymer)
+    pos, wj, W = getWeight(polymer,parameters)
     new_bead = playRoulette(pos, wj, W)
     polymer = np.vstack((polymer, new_bead)) #bead added
     pol_weight *= W
     return polymer, pol_weight
 
 # TODO find way to speedup ugly nested for loos
-def grow(population, step_size, up_th, low_th):
+def grow(population, step_size, up_th, low_th, parameters):
     '''
     Adds step_size number of beads to each polymer in the population,
     calculates up_lim and low_lim and decides whether to prune or split
@@ -215,7 +284,7 @@ def grow(population, step_size, up_th, low_th):
     # add step_size beads
     for i in range(step_size):
         for i, poly in enumerate(population):
-            population[i] = list(addBead(poly))
+            population[i] = list(addBead(poly, parameters))
     # gets up_lim and low_lim
     av_weight = getAvWeight(population)
     for i, poly in enumerate(population):
@@ -295,60 +364,5 @@ def weightedAverageErr(arr, weights):
     err = np.sqrt((n/(n-1))*np.sum((weights**2)*(arr-o_mean)**2))
     return o_mean, err
     
-## simulation parameters
-eps, T, sigma, res, = 1, 1, 0.8, 6
-## initial size of the population we start with
-#initial_pop_size = 500
-#
-#bb= 251
-#start = 1
-#step = 1
-#
-#A_w = np.zeros(len(range(start,bb,step)))
-#A_w_err = np.zeros(len(range(start,bb,step)))
-#
-#r_gyration = np.zeros(len(range(start,bb,step)))
-#r_gyration_err = np.zeros(len(range(start,bb,step)))
-#
-#pop_size_info = np.zeros(shape=(len(range(start,bb,step))))
-#
-#for count, b in enumerate(range(start,bb,step)):
-#    # need to think how to make this general, sorry im tired
-#    step_size = 1 # bead added aech time before pruning/enrichment
-#    num_steps = b # number of times we prune/enrich
-#    # final number of beads
-#    # N = 3 + step_size*num_steps
-#    
-#    # This little simulation shows how the number of polymers changes with the number
-#    # of beads when growing the population
-#    
-#    population = initializePopulation(initial_pop_size)
-#    for i in range(num_steps):
-#        population = grow(population, step_size, 2.4, 0.3)
-#    
-#    pop_size_info[count] = len(population)
-#    
-#    # extract end-to-end distance
-#    S, S_err = getS(population)
-#    A_w[count] = S
-#    A_w_err[count] = S_err
-#    
-#    #extract radius of gyration
-#    Rg, Rg_err = getRg(population)
-#    r_gyration[count] = Rg
-#    r_gyration_err[count] = Rg_err
-#
-#
-#    print('Done with {} beads'.format(b))
-#
-### optional saving of data in binary file
-#hf = h5py.File('Sim_polymer_PERM.h5', 'w')
-#hf.create_dataset('A_w', data=A_w)
-#hf.create_dataset('A_w_err', data=A_w_err)
-#
-#hf.create_dataset('r_gyration', data=r_gyration)
-#hf.create_dataset('r_gyration_err', data=r_gyration_err)
-#
-#hf.create_dataset('pop_size_info', data=pop_size_info)
-#hf.close()
+
 
