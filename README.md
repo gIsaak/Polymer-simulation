@@ -1,5 +1,7 @@
 # Polymer simulation
 
+![polymer](https://github.com/gIsaak/Polymer-simulation/blob/master/img/week1/50_beads.png)
+
 Import of computational physics project @ TU Delft
 
 A two dimensional polymer growth in a good solvent is simulated on the basis of the Rosenbluth algorithm and the PERM algorithm. Accurate results are reproduced and compared to literature. 
