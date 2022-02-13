@@ -1,10 +1,11 @@
-# Project 2: Monte Carlo simulation of polymers
+# Polymer simulation
 
-This project simulates the properties of long polymers in a good solvent.
+Import of computational physics project @ TU Delft
 
-Requisites: numpy,matplotlib
+A two dimensional polymer growth in a good solvent is simulated on the basis of the Rosenbluth algorithm and the PERM algorithm. Accurate results are reproduced and compared to literature. 
+The observables end-to-end distance as well as radius of gyration exhibit the expected behavior and allow insight in the growth of polymers by random walks (RW) and self avoiding random walks (SAW). Advantages of the PERM algorithm are shown within this study.
+
 Authors:
 
-- Brennan Undseth
 - Ludwig Hendl
 - Isacco Gobbi
